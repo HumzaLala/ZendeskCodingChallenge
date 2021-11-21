@@ -14,20 +14,26 @@ public class ZendeskTicketViewer {
     public static void main(String[] args) {
         System.out.println("Welcome to the Zendesk Ticket Viewer!\n");
         greet_user();
-        JSONObject json = null;
+        JSONObject tickets_json = null;
         console = new Scanner(System.in);
 
         String user_choice = console.next();
-        while(!user_choice.equals("quit")) {
-            json = getJSONObject();
-            JSONArray tickets = json.getJSONArray("tickets");
+        if(!user_choice.equalsIgnoreCase("quit")) {
+            tickets_json = getJSONObject("tickets.json");
+        }
+        while(!user_choice.equalsIgnoreCase("quit")) {
+            JSONArray tickets = tickets_json.getJSONArray("tickets");
+            int num_tickets = tickets_json.getInt("count");
             if(Integer.parseInt(user_choice) == 1) {
                 // view all tickets
+                for(int i = 0; i < num_tickets - 1; i++) {
+                    print_ticket(i, tickets);
+                }
             } else if(Integer.parseInt(user_choice) == 2) {
                 System.out.println("Enter Ticket Number: ");
                 int num = console.nextInt();
-                if(num < json.getInt("count")) { // check for valid ticket number
-                    System.out.println("Subject: " + tickets.getJSONObject(num).get("subject"));
+                if(num < num_tickets) { // check for valid ticket number
+                    print_ticket(num, tickets);
                 } else {
                     System.out.println("Invalid ticket number");
                 }
@@ -37,8 +43,16 @@ public class ZendeskTicketViewer {
         }
     }
 
-    private static JSONObject getJSONObject() {
-        String sUrl = "https://zcc9547.zendesk.com/api/v2/tickets.json";
+    private static void print_ticket(int index, JSONArray tickets) {
+        System.out.println("---------START OF TICKET " + index + "-------------------------");
+        System.out.println("    Subject: " + tickets.getJSONObject(index).get("subject"));
+        System.out.println("    Submitted By: " + tickets.getJSONObject(index).get("submitter_id"));
+        System.out.println("    Date: " + tickets.getJSONObject(index).get("created_at"));
+        System.out.println("---------END OF TICKET " + index + "---------------------------\n");
+    }
+
+    private static JSONObject getJSONObject(String file) {
+        String sUrl = "https://zcc9547.zendesk.com/api/v2/" + file;
         try {
             URL url = new URL(sUrl);
             HttpURLConnection req = (HttpURLConnection) url.openConnection();
