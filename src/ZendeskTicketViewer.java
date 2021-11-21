@@ -1,7 +1,5 @@
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,37 +11,67 @@ public class ZendeskTicketViewer {
     private static Scanner console;
     public static void main(String[] args) {
         System.out.println("Welcome to the Zendesk Ticket Viewer!\n");
-        greet_user();
-        JSONObject tickets_json = null;
         console = new Scanner(System.in);
-
-        String user_choice = console.next();
+        String user_choice = greet_user();
+        JSONObject tickets_json = null;
         if(!user_choice.equalsIgnoreCase("quit")) {
             tickets_json = getJSONObject("tickets.json");
         }
         while(!user_choice.equalsIgnoreCase("quit")) {
+            int viewing_option;
+            try { // deal with string inputs
+                viewing_option = Integer.parseInt(user_choice);
+            } catch(NumberFormatException e) {
+                System.out.println("Invalid input");
+                user_choice = greet_user();
+                continue;
+            }
             JSONArray tickets = tickets_json.getJSONArray("tickets");
             int num_tickets = tickets_json.getInt("count");
-            if(Integer.parseInt(user_choice) == 1) {
-                // view all tickets
-                for(int i = 0; i < num_tickets - 1; i++) {
-                    print_ticket(i, tickets);
-                }
-            } else if(Integer.parseInt(user_choice) == 2) {
+            if(viewing_option == 1) { // view all tickets
+                printAllTicketsPaged(num_tickets, tickets);
+            } else if(viewing_option == 2) { // view single ticket
                 System.out.println("Enter Ticket Number: ");
-                int num = console.nextInt();
-                if(num < num_tickets) { // check for valid ticket number
-                    print_ticket(num, tickets);
-                } else {
+                try {
+                    int num = Integer.parseInt(console.nextLine());
+                    print_ticket(num, tickets, num_tickets);
+                } catch(Exception e) {
                     System.out.println("Invalid ticket number");
                 }
+            } else {
+                System.out.println("Invalid Input");
             }
-            greet_user();
-            user_choice = console.next();
+            user_choice = greet_user();
         }
     }
 
-    private static void print_ticket(int index, JSONArray tickets) {
+    private static void printAllTicketsPaged(int num_tickets, JSONArray tickets) {
+        int count = 0;
+        for(int i = 0; i < num_tickets - 1; i++) {
+            try {
+                print_ticket(i, tickets, num_tickets);
+                count++;
+            } catch(IndexOutOfBoundsException e) {
+                break;
+            }
+            if(count == num_tickets - 1) {
+                System.out.println("END OF LISTING");
+                break;
+            }
+            if(count % 25 == 0) {
+                System.out.println("Next page? (y/n): ");
+                String res = console.nextLine();
+                if(res.equalsIgnoreCase("n")) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private static void print_ticket(int index, JSONArray tickets, int num_tickets) {
+        if(index >= num_tickets - 1) {
+            throw new IndexOutOfBoundsException();
+        }
         System.out.println("---------START OF TICKET " + index + "-------------------------");
         System.out.println("    Subject: " + tickets.getJSONObject(index).get("subject"));
         System.out.println("    Submitted By: " + tickets.getJSONObject(index).get("submitter_id"));
@@ -79,10 +107,11 @@ public class ZendeskTicketViewer {
         return null;
     }
 
-    private static void greet_user() {
+    private static String greet_user() {
         System.out.println("\n   Select view options:");
         System.out.println("   * Press 1 to view all tickets");
         System.out.println("   * Press 2 to view a ticket");
         System.out.println("   * Type 'quit' to exit");
+        return console.nextLine();
     }
 }
