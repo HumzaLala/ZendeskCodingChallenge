@@ -8,14 +8,13 @@ import java.net.URL;
 import java.util.Scanner;
 
 public class ZendeskTicketViewer {
-    private static Scanner console;
     public static void main(String[] args) {
         System.out.println("Welcome to the Zendesk Ticket Viewer!\n");
-        console = new Scanner(System.in);
-        String user_choice = greet_user();
+        Scanner console = new Scanner(System.in);
+        String user_choice = greet_user(console);
         JSONObject tickets_json = null;
         if(!user_choice.equalsIgnoreCase("quit")) {
-            tickets_json = getJSONObject("tickets.json");
+            tickets_json = getJSONObject("https://zcc9547.zendesk.com/api/v2/tickets.json", "aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH");
         }
         while(!user_choice.equalsIgnoreCase("quit")) {
             int viewing_option;
@@ -23,29 +22,33 @@ public class ZendeskTicketViewer {
                 viewing_option = Integer.parseInt(user_choice);
             } catch(NumberFormatException e) {
                 System.out.println("Invalid input");
-                user_choice = greet_user();
+                user_choice = greet_user(console);
                 continue;
             }
-            JSONArray tickets = tickets_json.getJSONArray("tickets");
-            int num_tickets = tickets_json.getInt("count");
-            if(viewing_option == 1) { // view all tickets
-                printAllTicketsPaged(num_tickets, tickets);
-            } else if(viewing_option == 2) { // view single ticket
-                System.out.println("Enter Ticket Number: ");
-                try {
-                    int num = Integer.parseInt(console.nextLine());
-                    print_ticket(num, tickets, num_tickets);
-                } catch(Exception e) {
-                    System.out.println("Invalid ticket number");
-                }
-            } else {
-                System.out.println("Invalid Input");
-            }
-            user_choice = greet_user();
+            handleTicketViewer(viewing_option, tickets_json, console);
+            user_choice = greet_user(console);
         }
     }
 
-    private static void printAllTicketsPaged(int num_tickets, JSONArray tickets) {
+    public static void handleTicketViewer(int viewing_option, JSONObject tickets_json, Scanner console) {
+        JSONArray tickets = tickets_json.getJSONArray("tickets");
+        int num_tickets = tickets_json.getInt("count");
+        if(viewing_option == 1) { // view all tickets
+            printAllTicketsPaged(num_tickets, tickets, console);
+        } else if(viewing_option == 2) { // view single ticket
+            System.out.println("Enter Ticket Number: ");
+            try {
+                int num = Integer.parseInt(console.nextLine());
+                print_ticket(num, tickets, num_tickets);
+            } catch(Exception e) {
+                System.out.println("Invalid ticket number");
+            }
+        } else {
+            System.out.println("Invalid Input");
+        }
+    }
+
+    public static void printAllTicketsPaged(int num_tickets, JSONArray tickets, Scanner console) {
         int count = 0;
         for(int i = 0; i < num_tickets - 1; i++) {
             try {
@@ -68,7 +71,7 @@ public class ZendeskTicketViewer {
         }
     }
 
-    private static void print_ticket(int index, JSONArray tickets, int num_tickets) {
+    public static void print_ticket(int index, JSONArray tickets, int num_tickets) {
         if(index >= num_tickets - 1) {
             throw new IndexOutOfBoundsException();
         }
@@ -76,15 +79,14 @@ public class ZendeskTicketViewer {
         System.out.println("    Subject: " + tickets.getJSONObject(index).get("subject"));
         System.out.println("    Submitted By: " + tickets.getJSONObject(index).get("submitter_id"));
         System.out.println("    Date: " + tickets.getJSONObject(index).get("created_at"));
-        System.out.println("---------END OF TICKET " + index + "---------------------------\n");
+        System.out.println("---------END OF TICKET " + index + "---------------------------");
     }
 
-    private static JSONObject getJSONObject(String file) {
-        String sUrl = "https://zcc9547.zendesk.com/api/v2/" + file;
+    public static JSONObject getJSONObject(String sUrl, String apiToken) {
         try {
             URL url = new URL(sUrl);
             HttpURLConnection req = (HttpURLConnection) url.openConnection();
-            req.setRequestProperty("Authorization", "Basic aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH");
+            req.setRequestProperty("Authorization", "Basic " + apiToken);
             int resCode = req.getResponseCode();
             if (resCode == 200) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
@@ -97,17 +99,19 @@ public class ZendeskTicketViewer {
                 JSONObject obj = new JSONObject(sb.toString());
                 req.disconnect();
                 return obj;
+            } else if(resCode == 401) {
+                System.out.println("You don't have permission :(");
             } else {
                 System.out.println("Something went wrong :(");
                 return null;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("There was a problem with getting the tickets");
         }
         return null;
     }
 
-    private static String greet_user() {
+    public static String greet_user(Scanner console) {
         System.out.println("\n   Select view options:");
         System.out.println("   * Press 1 to view all tickets");
         System.out.println("   * Press 2 to view a ticket");
