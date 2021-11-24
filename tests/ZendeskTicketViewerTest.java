@@ -7,6 +7,7 @@ import java.util.Scanner;
 import static org.junit.Assert.*;
 
 public class ZendeskTicketViewerTest {
+    // Allows for testing of console output
     private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
     private final PrintStream originalOut = System.out;
@@ -48,7 +49,7 @@ public class ZendeskTicketViewerTest {
     public void testIncorrectApiTokenButCorrectWebsite() {
         String token = "incorrect token";
         String site = "https://zcc9547.zendesk.com/api/v2/tickets.json";
-        ZendeskTicketViewer.getJSONObject(site, token);
+        ZendeskTicketViewer.getJSONFromService(site, token);
         boolean is_token_incorrect = outContent.toString().contains("You don't have permission :(");
         assertTrue(is_token_incorrect);
     }
@@ -57,7 +58,7 @@ public class ZendeskTicketViewerTest {
     public void testCorrectApiTokenAndCorrectWebsite() {
         String token = "aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH";
         String site = "https://zcc9547.zendesk.com/api/v2/tickets.json";
-        boolean bool = ZendeskTicketViewer.getJSONObject(site, token) != null;
+        boolean bool = ZendeskTicketViewer.getJSONFromService(site, token) != null;
         assertTrue(bool);
     }
 
@@ -65,7 +66,7 @@ public class ZendeskTicketViewerTest {
     public void testIncorrectWebsiteButCorrectToken() {
         String token = "aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH";
         String site = "incorrect website";
-        ZendeskTicketViewer.getJSONObject(site, token);
+        ZendeskTicketViewer.getJSONFromService(site, token);
         boolean is_site_incorrect = outContent.toString().contains("There was a problem with getting the tickets");
         assertTrue(is_site_incorrect);
     }
@@ -119,7 +120,7 @@ public class ZendeskTicketViewerTest {
     public void testPrintSingle() {
         //takes from json file with all 100 tickets
         String actualOutput = getActualOutput(2, 100, "2\n5\n");
-        String expectedOutput = "Enter Ticket Number: \r\n" +
+        String expectedOutput = "Enter Ticket Number: (Starting from 0)\r\n" +
                 "---------START OF TICKET 2-------------------------\r\n" +
                 "    Subject: excepteur laborum ex occaecat Lorem\r\n" +
                 "    Submitted By: 1902278299544\r\n" +

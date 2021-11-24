@@ -8,15 +8,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$USER_HOME$/Downloads/json-20210307.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="junit" level="project" />
+    <orderEntry type="library" exported="" scope="PROVIDED" name="junit" level="project" />
+    <orderEntry type="library" exported="" scope="PROVIDED" name="json" level="project" />
+    <orderEntry type="library" exported="" scope="PROVIDED" name="json-20210307" level="project" />
   </component>
 </module>
