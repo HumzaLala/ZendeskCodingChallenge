@@ -11,45 +11,52 @@ public class ZendeskTicketViewer {
     public static void main(String[] args) {
         System.out.println("Welcome to the Zendesk Ticket Viewer!\n");
         Scanner console = new Scanner(System.in);
-        String user_choice = get_user_menu_option(console);
-        JSONObject tickets_json = null;
-        if(!user_choice.equalsIgnoreCase("quit")) {
+        String userChoice = getUserMenuOption(console);
+        JSONObject ticketsJson = null;
+        if(!userChoice.equalsIgnoreCase("quit")) {
             // Fetches the tickets.json file using a hardcoded API token to simply access the api
             // under my Zendesk account. For further development, the user can be prompted for credentials
-            tickets_json = getJSONFromService("https://zcc9547.zendesk.com/api/v2/tickets.json", "aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH");
-            if(tickets_json == null) {return;}
+            String ticketsURL = "https://zcc9547.zendesk.com/api/v2/tickets.json";
+            String apiToken = "aHVtemFsMUBvdXRsb29rLmNvbS90b2tlbjo3TkNHMXlwVk9VMU43SkFxNm9md2FQM0U3WWdBQVJZZnhQV1VaSTNH";
+            ticketsJson = getJSONFromService(ticketsURL, apiToken);
+            // user is notified about service issues in getJSONFromService()
+            if(ticketsJson == null) {return;}
         }
-        while(!user_choice.equalsIgnoreCase("quit")) {
-            int viewing_option;
-            try { // deal with string inputs
-                viewing_option = Integer.parseInt(user_choice);
-            } catch(NumberFormatException e) {
-                System.out.println("Invalid input");
-                user_choice = get_user_menu_option(console);
-                continue;
-            }
-            handleTicketViewer(viewing_option, tickets_json, console);
-            user_choice = get_user_menu_option(console);
+        while(!userChoice.equalsIgnoreCase("quit")) {
+            userChoice = processUserInput(ticketsJson, userChoice, console);
         }
     }
 
+    private static String processUserInput(JSONObject ticketsJson, String currUserChoice, Scanner console) {
+        int viewingOption;
+        try { // deal with string inputs
+            viewingOption = Integer.parseInt(currUserChoice);
+        } catch(NumberFormatException e) {
+            System.out.println("Invalid input");
+            return getUserMenuOption(console);
+        }
+        handleTicketViewingOption(viewingOption, ticketsJson, console);
+        return getUserMenuOption(console);
+    }
+
+
     /**
      * Handles ticket output based on user menu option
-     * @param viewing_option - Either a 1 or 0 denoting a menu option
-     * @param tickets_json - The JSONObject containing ticket data
+     * @param viewingOption - Either a 1 or 0 denoting a menu option
+     * @param ticketsJson - The JSONObject containing ticket data
      * @param console - used for user input
      */
-    public static void handleTicketViewer(int viewing_option, JSONObject tickets_json, Scanner console) {
-        JSONArray tickets = tickets_json.getJSONArray("tickets");
-        int num_tickets = tickets_json.getInt("count");
-        if(viewing_option == 1) { // view all tickets
-            printAllTicketsPaged(num_tickets, tickets, console);
-        } else if(viewing_option == 2) { // view single ticket
+    public static void handleTicketViewingOption(int viewingOption, JSONObject ticketsJson, Scanner console) {
+        JSONArray tickets = ticketsJson.getJSONArray("tickets");
+        int numTickets = ticketsJson.getInt("count");
+        if(viewingOption == 1) { // view all tickets
+            printAllTicketsPaged(numTickets, tickets, console);
+        } else if(viewingOption == 2) { // view single ticket
             System.out.println("Enter Ticket Number: (Starting from 0)");
             try {
                 int num = Integer.parseInt(console.nextLine());
-                print_ticket(num, tickets, num_tickets);
-            } catch(Exception e) {
+                printTicket(num, tickets, numTickets);
+            } catch(Exception e) { // covers NumberFormatException and IndexOutOfBoundsException
                 System.out.println("Invalid ticket number");
             }
         } else {
@@ -64,11 +71,11 @@ public class ZendeskTicketViewer {
      * @param tickets - the JSONArray of all the user's tickets
      * @param console - used for user input
      */
-    public static void printAllTicketsPaged(int num_tickets, JSONArray tickets, Scanner console) {
+    private static void printAllTicketsPaged(int num_tickets, JSONArray tickets, Scanner console) {
         int count = 0;
         for(int i = 0; i <= num_tickets - 1; i++) {
             try {
-                print_ticket(i, tickets, num_tickets);
+                printTicket(i, tickets, num_tickets);
                 count++;
             } catch(IndexOutOfBoundsException e) {
                 break;
@@ -92,7 +99,7 @@ public class ZendeskTicketViewer {
      * @param num_tickets - The total number of tickets the user has
      * @throws IndexOutOfBoundsException if the index is beyond the number of tickets
      */
-    public static void print_ticket(int index, JSONArray tickets, int num_tickets) {
+    private static void printTicket(int index, JSONArray tickets, int num_tickets) {
         if(index >= num_tickets - 1 || index < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -116,21 +123,12 @@ public class ZendeskTicketViewer {
     public static JSONObject getJSONFromService(String sUrl, String apiToken) {
         try {
             URL url = new URL(sUrl);
-            HttpURLConnection req = (HttpURLConnection) url.openConnection();
-            req.setRequestProperty("Authorization", "Basic " + apiToken);
-            int resCode = req.getResponseCode();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("Authorization", "Basic " + apiToken);
+            int resCode = connection.getResponseCode();
             switch (resCode) {
                 case 200 -> {
-                    BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line).append("\n");
-                    }
-                    br.close();
-                    JSONObject obj = new JSONObject(sb.toString());
-                    req.disconnect();
-                    return obj;
+                    return createJSONObject(connection);
                 }
                 case 401 -> System.out.println("You don't have permission :(");
                 default -> System.out.println("Something went wrong :(");
@@ -141,12 +139,25 @@ public class ZendeskTicketViewer {
         return null;
     }
 
+    private static JSONObject createJSONObject(HttpURLConnection connection) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        br.close();
+        JSONObject obj = new JSONObject(sb.toString());
+        connection.disconnect();
+        return obj;
+    }
+
     /**
      * Displays the menu of options and returns the user's choice as a String
      * @param console - used for console input
      * @return the user's menu choice as a String
      */
-    public static String get_user_menu_option(Scanner console) {
+    private static String getUserMenuOption(Scanner console) {
         System.out.println("\n   Select view options:");
         System.out.println("   * Press 1 to view all tickets");
         System.out.println("   * Press 2 to view a ticket");

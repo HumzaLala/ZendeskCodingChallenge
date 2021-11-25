@@ -1,4 +1,4 @@
-#Humza's Zendesk Coding Challenge
+# Humza's Zendesk Coding Challenge
 This is a CLI-based Java program tha accesses the Zendesk API to display
 tickets associated with my account to the user. The menu options
 available are
@@ -15,7 +15,7 @@ covering incorrect user inputs in menu and submenu options, correct parsing of J
 and correct terminal output based on different JSON data, such as
 various numbers of total tickets.
 
-##Execution
+## Execution
 
 To execute in a CLI, run
 >`cd out/artifacts/zendesk_challenge_jar`
