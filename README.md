@@ -13,8 +13,7 @@ per page.
 Included are unit tests using the JUnit testing framework,
 covering incorrect user inputs in menu and submenu options, correct parsing of JSON data,
 and correct terminal output based on different JSON data, such as
-various numbers of total tickets. Also covered invalid api token or website for fetching the JSON file
-of the tickets.
+various numbers of total tickets.
 
 ## Execution
 
