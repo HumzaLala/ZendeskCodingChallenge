@@ -17,8 +17,9 @@ various numbers of total tickets. Also covered an incorrect api token or website
 JSON. 
 
 ## Execution
+The machine needs to have Java installed to run this program.
 
-To execute in a CLI, run
+To execute in a CLI, run the following
 >`cd out/artifacts/zendesk_challenge_jar`
 > 
 > `java -jar zendesk_challenge.jar`

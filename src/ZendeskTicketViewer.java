@@ -27,7 +27,7 @@ public class ZendeskTicketViewer {
         }
     }
 
-    private static String processUserInput(JSONObject ticketsJson, String currUserChoice, Scanner console) {
+    public static String processUserInput(JSONObject ticketsJson, String currUserChoice, Scanner console) {
         int viewingOption;
         try { // deal with string inputs
             viewingOption = Integer.parseInt(currUserChoice);
@@ -60,7 +60,7 @@ public class ZendeskTicketViewer {
                 System.out.println("Invalid ticket number");
             }
         } else {
-            System.out.println("Invalid Input");
+            System.out.println("Invalid input");
         }
     }
 
@@ -126,12 +126,12 @@ public class ZendeskTicketViewer {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("Authorization", "Basic " + apiToken);
             int resCode = connection.getResponseCode();
-            switch (resCode) {
-                case 200 -> {
-                    return createJSONObject(connection);
-                }
-                case 401 -> System.out.println("You don't have permission :(");
-                default -> System.out.println("Something went wrong :(");
+            if(!sUrl.endsWith("json")) {
+                System.out.println("Something went wrong :(");
+            } else if(resCode == 200) {
+                return createJSONObject(connection);
+            } else if(resCode == 401) {
+                System.out.println("You don't have permission :(");
             }
         } catch (IOException e) {
             System.out.println("There was a problem with getting the tickets");
